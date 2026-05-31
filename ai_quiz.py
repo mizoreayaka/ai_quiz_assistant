@@ -2,6 +2,7 @@ import streamlit as st
 from openai import OpenAI
 import random
 import os
+import re
 
 # ==================== 配置 ====================
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
@@ -36,7 +37,6 @@ if "show_answer" not in st.session_state:
     st.session_state.show_answer = False
 
 # ==================== 生成题目函数 ====================
-import re  # 记得在文件顶部添加这个 import
 
 def generate_question():
     """调用DeepSeek生成一道语文题，使用健壮的解析方法"""
