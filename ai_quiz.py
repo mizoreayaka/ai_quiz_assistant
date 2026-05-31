@@ -3,8 +3,13 @@ from openai import OpenAI
 import random
 
 # ==================== 配置 ====================
-# 请填入您的 DeepSeek API Key
-DEEPSEEK_API_KEY = "sk-66d8c46bf24147f1afb58be1be345fbf"
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+if not DEEPSEEK_API_KEY:
+    try:
+        import streamlit as st
+        DEEPSEEK_API_KEY = st.secrets["DEEPSEEK_API_KEY"]
+    except:
+        raise ValueError("未找到 DEEPSEEK_API_KEY，请设置环境变量或Streamlit Secrets。")
 
 # 初始化 DeepSeek 客户端
 client = OpenAI(
