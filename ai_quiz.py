@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 import random
+import os
 
 # ==================== 配置 ====================
 DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY")
