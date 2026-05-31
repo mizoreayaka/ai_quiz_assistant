@@ -36,8 +36,10 @@ if "show_answer" not in st.session_state:
     st.session_state.show_answer = False
 
 # ==================== 生成题目函数 ====================
+import re  # 记得在文件顶部添加这个 import
+
 def generate_question():
-    """调用DeepSeek生成一道语文题"""
+    """调用DeepSeek生成一道语文题，使用健壮的解析方法"""
     q_type = random.choice(question_types)
     
     prompt = f"""
@@ -46,16 +48,12 @@ def generate_question():
     1. 题目要适合课堂提问,不要出很基础的题目。
     2. 题目要有明确的答案。
     3. 输出格式必须严格如下：先以“题目：”开头，紧跟着题目内容；然后换行，以“答案：”开头，紧跟着答案内容。
-    4. 不要输出其他任何内容。
-    5. 如果是成语填字的话，给出空缺字的时候也给出成语的意思。
+    4. 不要输出其他任何无关的文字或空行。
+    5. 如果是成语填字，给出空缺字时也给出成语的意思。
     
-    示例：（希望是语文教材里面高年级会学到的诗词）
-    题目：请说出“春潮带雨晚来急”的下一句。
-    答案：野渡无人舟自横。
+    示例输出格式：
     题目：请说出“月落乌啼霜满天”的下一句。
     答案：江枫渔火对愁眠。
-    题目:海_天空
-    答案：海阔天空。意思是……
     """
     
     try:
@@ -63,16 +61,32 @@ def generate_question():
             model="deepseek-chat",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.8,
-            max_tokens=200
+            max_tokens=500  # 增大 token 限制，防止长答案被截断
         )
         content = response.choices[0].message.content.strip()
-        lines = content.split('\n')
         
-        # 解析题目和答案
-        question = lines[0].replace("题目：", "").strip()
-        answer = lines[1].replace("答案：", "").strip() if len(lines) > 1 else "答案见上"
+        # 使用正则表达式提取题目和答案，不再依赖固定的行数
+        # 提取“题目：”到“答案：”之间的内容作为题目
+        question_match = re.search(r"题目：\s*(.*?)\s*答案：", content, re.DOTALL)
+        # 提取“答案：”之后的所有内容作为答案
+        answer_match = re.search(r"答案：\s*(.*)", content, re.DOTALL)
         
-        return question, answer
+        if question_match and answer_match:
+            question = question_match.group(1).strip()
+            answer = answer_match.group(1).strip()
+            return question, answer
+        else:
+            # 如果解析失败，尝试按行解析作为备选方案
+            lines = content.split('\n')
+            question = lines[0].replace("题目：", "").strip()
+            # 如果第二行存在但不是答案，尝试寻找真正的“答案：”行
+            answer = "答案见上"
+            for line in lines:
+                if line.startswith("答案："):
+                    answer = line.replace("答案：", "").strip()
+                    break
+            return question, answer
+            
     except Exception as e:
         return f"出题失败：{str(e)}", ""
 
